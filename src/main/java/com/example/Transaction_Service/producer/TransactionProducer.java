@@ -3,7 +3,10 @@ package com.example.Transaction_Service.producer;
 import com.example.Transaction_Service.Enum.StatusTransacao;
 import com.example.Transaction_Service.dto.TransacaoResponse;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
+@Component
 public class TransactionProducer {
 
     private final StreamBridge streamBridge;

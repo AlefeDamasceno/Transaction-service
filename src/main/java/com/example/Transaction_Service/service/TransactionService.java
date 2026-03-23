@@ -24,6 +24,11 @@ public class TransactionService {
     }
 
     public TransacaoResponse processTransaction(TransacaoRequest request){
+
+        if (request.valor() == null || request.valor() <= 0) {
+            throw new IllegalArgumentException("Valor da transação deve ser maior que zero");
+        }
+
         UUID id = UUID.randomUUID();
         LocalDateTime timestamp = LocalDateTime.now();
 
@@ -46,36 +51,29 @@ public class TransactionService {
 
     private boolean validateSaldoRedis(TransacaoRequest request) {
 
+        if (request.tipoTransacao().equals(TipoTransacao.DEBITO)) {
+            String chaveSaldo = "saldo:usuario:" + request.contaId();
+            long saldoAtual = obterValorRedis(chaveSaldo);
 
-        if (request.tipoTransacao().equals(TipoTransacao.DEBITO)){
-
-            String chaveSaldo = "saldo:usuario:"+ request.contaId();
-
-            Long saldoAposTransacao = redisTemplate.opsForValue()
-                    .decrement(chaveSaldo, request.valor());
-
-            if (saldoAposTransacao != null && saldoAposTransacao >= 0){
+            if (saldoAtual >= request.valor()) {
+                redisTemplate.opsForValue().decrement(chaveSaldo, request.valor());
                 return true;
-
-            } else {
-                redisTemplate.opsForValue()
-                        .increment(chaveSaldo, request.valor());
             }
         }
 
         String chaveLimite = "limite:usuario:" + request.contaId();
+        long limiteAtual = obterValorRedis(chaveLimite);
 
-        Long limiteAposTransacao = redisTemplate.opsForValue()
-                .decrement(chaveLimite, request.valor());
-
-        if (limiteAposTransacao != null && limiteAposTransacao >= 0){
+        if (limiteAtual >= request.valor()) {
+            redisTemplate.opsForValue().decrement(chaveLimite, request.valor());
             return true;
-            
-        } else {
-            redisTemplate.opsForValue()
-                    .increment(chaveLimite, request.valor());
         }
 
         return false;
+    }
+
+    private long obterValorRedis(String chave) {
+        Object valor = redisTemplate.opsForValue().get(chave);
+        return valor != null ? Long.parseLong(valor.toString()) : 0L;
     }
 }
