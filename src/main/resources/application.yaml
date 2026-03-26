@@ -2,6 +2,27 @@ spring:
   application:
     name: transaction-service
 
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  datasource:
+    url: jdbc:h2:mem:transactionDb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
   data:
     redis:
       host: localhost
@@ -13,6 +34,7 @@ spring:
       kafka:
         binder:
           brokers: localhost:9092
+          auto-create-topics: true
 
       bindings:
         approved-out:
@@ -31,8 +53,12 @@ spring:
               acks: all
               retries: 1
 
+        accountEventConsumer-in-0:
+          destination: account-created
+          group: account-created-group
+
       function:
-        definition: approved;rejected
+        definition: approved;rejected;accountEventConsumer
 
 server:
   port: 8080
@@ -42,3 +68,14 @@ logging:
     root: INFO
     com.example: DEBUG
     org.springframework.cloud.stream: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+  show-actuator: false
